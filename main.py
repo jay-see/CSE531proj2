@@ -5,15 +5,11 @@ import bankworld_pb2
 import bankworld_pb2_grpc
 import json
 from Customer import Customer
-#from Branch import Branch
 from multiprocessing import Process
 import time
 import threading
 
 finalmsg = ""
-#bankbranch = list()
-#content = ""
-
     
 # instantiate Customer object, create stub, and execute Events
 def Cust(custid, custevents):
@@ -26,9 +22,7 @@ def Cust(custid, custevents):
     # print to string
     print ("PRE-FINAL MESSAGE is " + finalmsg)
     with open("output.json", "a") as thefile:
- #       print ("PRINTING TO FILE = " + finalmsg)
         thefile.write("\n" + finalmsg)
- #   content += finalmsg
  
 # Opening JSON file
 f = open('input.json',)
@@ -56,16 +50,14 @@ if __name__ == '__main__':
             p.append(proc)
     for proc in p:
         proc.join()    
-#            Cust(i['id'],str(i['events']),)
     with open("output.json", "a") as thefile:
-# add closing bracket
+        # add closing bracket
         thefile.write("]")
 
+    # convert output to valid JSON format    
     reading_file = open("output.json", "r")
     new_file_content = ""
     for line in reading_file:
-#        stripped_line = line.strip()
-#    new_line = reading_file.replace(",]", "]")
         new_file_content += line.replace(",]", "\n]")
     reading_file.close()
 

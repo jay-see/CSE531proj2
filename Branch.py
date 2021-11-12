@@ -113,18 +113,12 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
         return bankworld_pb2.BranchReply(branch_msg=branchmsg)
 
 
-#serverlist = list()
-#bankbranch = list()
 p = list()
 count = 0
-#index = 0
 
 # instantiate all Branch objects, create branch stubs over ports 50051 to 50050+id
-def Serve(id, balance, branches):
-#    global index
-    
+def Serve(id, balance, branches):    
     channelnumber = 50050+id
-#    index+=1
     
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10,))
     bankbranch = Branch(id, balance, branches)
@@ -141,11 +135,8 @@ def Serve(id, balance, branches):
     
 # Call Serve() for each branch
 def run():
-#    branchnum = 0
-    
     for y in data:
         if y['type'] == 'bank':
-#            branchnum += 1
             proc = Process(target=Serve, args=(y['id'], y['balance'], count,))
             proc.start()
             p.append(proc)
@@ -156,7 +147,6 @@ def run():
 # main function
 if __name__ == '__main__':
     logging.basicConfig()
-
     
     # Opening JSON file
     f = open('input.json',)
@@ -169,6 +159,5 @@ if __name__ == '__main__':
 
 # call run() to create branches
     run()
-# don't terminate processes
-#    serverlist[0].wait_for_termination()
+
 
