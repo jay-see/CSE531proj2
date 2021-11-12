@@ -1,8 +1,13 @@
-Jeffrey Cheng CSE531 Fall 2021 Arizona State University
+Jeffrey Cheng CSE531 Project 2 - Fall 2021 - Arizona State University
 
 To execute my project implementation, please run the following commands in linux commandline:
 
 python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. ./bankworld.proto
+python3 Branch.py
+
+
+then open another linux terminal and, in the same path, run the following command:
+
 python3 main.py
 
 
