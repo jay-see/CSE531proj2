@@ -1,0 +1,12 @@
+Starting server. Listening on port 50051
+Starting server. Listening on port 50052
+Starting server. Listening on port 50053
+Starting server. Listening on port 50054
+Starting server. Listening on port 50055
+[
+{"id": 4, "recv": [{"interface": "deposit", "result": "success"}, {"interface": "query", "result": "success", "money": 706}]},
+{"id": 1, "recv": [{"interface": "deposit", "result": "success"}, {"interface": "query", "result": "success", "money": 706}]},
+{"id": 3, "recv": [{"interface": "deposit", "result": "success"}, {"interface": "query", "result": "success", "money": 706}]},
+{"id": 5, "recv": [{"interface": "deposit", "result": "success"}, {"interface": "query", "result": "success", "money": 706}]},
+{"id": 2, "recv": [{"interface": "deposit", "result": "success"}, {"interface": "query", "result": "success", "money": 706}]}
+]

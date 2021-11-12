@@ -1,0 +1,71 @@
+[
+{
+"id" : 1,
+"type" : "client",
+"events" : [{"interface":"deposit", "money": 170 },{"interface":"query", "money": 400 }]
+
+},
+
+{
+"id" : 2,
+"type" : "client",
+"events" : [{"interface":"deposit", "money": 130 },{"interface":"query", "money": 400 }]
+
+},
+
+{
+"id" : 3,
+"type" : "client",
+"events" : [{"interface":"deposit", "money": 3 },{"interface":"query", "money": 400 }]
+
+},
+
+{
+"id" : 4,
+"type" : "client",
+"events" : [{"interface":"deposit", "money": 2 },{"interface":"query", "money": 400 }]
+
+},
+
+{
+"id" : 5,
+"type" : "client",
+"events" : [{"interface":"deposit", "money": 1 },{"interface":"query", "money": 400 }]
+
+},
+    
+{
+"id" : 1,
+"type" : "bank",
+"balance" : 400
+
+},
+
+{
+"id" : 2,
+"type" : "bank",
+"balance" : 400
+
+},
+
+{
+"id" : 3,
+"type" : "bank",
+"balance" : 400
+
+},
+
+{
+"id" : 4,
+"type" : "bank",
+"balance" : 400
+
+},
+
+{
+"id" : 5,
+"type" : "bank",
+"balance" : 400
+
+}
+]
