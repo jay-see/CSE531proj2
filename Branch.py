@@ -20,6 +20,8 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
         self.stubList = list()
         # a list of received messages used for debugging purpose
         self.recvMsg = list()
+        # the Branch's clock
+        self.clock = 0
         # iterate the processID of the branches
 
     # TODO: students are expected to process requests from both Client and Branch
@@ -48,14 +50,24 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
 
     # subtract the withdrawal amount from this branch's balance
     def Propagate_Withdraw(self, amount, context):
-        new_bal = self.balance - int(amount.msg)
+        Branch.Propagate_Request(self, remote_clk)
+        response_to_branch = "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_request\", \"clock\": " + str(self.clock) + " },"
+        Branch.Propagate_Execute(self, -amount)
+        response_to_branch += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_execute\", \"clock\": " + str(self.clock) + " },"
+        Branch.Propagate_Response(self, response.withdraw_msg)
+        response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_response\", \"clock\": " + str(self.clock) + " },"
+        return bankworld_pb2.WithdrawReply(withdraw_msg=response_to_branch)
 
-        if new_bal >= 0:
-            self.balance = new_bal
-            withdrawmsg = "success"
-        else :
-            withdrawmsg = "fail"
-        return bankworld_pb2.WithdrawReply(withdraw_msg=withdrawmsg)
+    def Propagate_Request(self, remote_clk):
+        self.clock = max(remote_clk, self.clock) + 1
+        
+    def Propagate_Execute(self, amount):
+        self.balance = self.balance + amount
+        self.clock += 1
+
+    def Propagate_Response(self,response):
+        self.clock += 1
+ 
 
     # return balance
     def Query(self):
@@ -63,53 +75,63 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
         return self.balance
 
     # add deposit amount to this branch balance and then use branch stubs to send the transaction to all other branches
-    def Deposit(self, amount):
-        new_bal = self.balance + amount
-        if new_bal >= 0:
-            self.balance = new_bal
+    def Deposit(self, amount, remote_clk, event_id):
+        Branch.Event_Request(self, remote_clk)
+        response_to_client = "\n  {\"id\": " + event_id  + ", \"name\": \"deposit_request\", \"clock\": " + str(self.clock) + " },"
+        Branch.Event_Execute(self, amount)
+        response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"deposit_execute\", \"clock\": " + str(self.clock) + " },"
+        for i in range(len(self.stubList)) :
+            if (i+1) != self.id :
+                response = self.stubList[i].Propagate_Deposit(bankworld_pb2.DepositRequest(msg=str(amount)))
 
-            for i in range(len(self.stubList)) :
-                if (i+1) != self.id :
-                    response = self.stubList[i].Propagate_Deposit(bankworld_pb2.DepositRequest(msg=str(amount)))
-
-            return (response.deposit_msg)
-        else:
-            return "fail"
+        Branch.Event_Response(self, response.deposit_msg)
+        response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"deposit_response\", \"clock\": " + str(self.clock) + " },"
+        return (response_to_client)
 
     # subtract withdrawal amount from this branch balance and then use branch stubs to send the transaction to all other branches
-    def Withdraw(self, amount):
-        new_bal = self.balance - amount
-        if new_bal >= 0:
-            self.balance = new_bal
+    def Withdraw(self, amount, remote_clk, event_id):
+        Branch.Event_Request(self, remote_clk)
+        response_to_client = "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_request\", \"clock\": " + str(self.clock) + " },"
+        Branch.Event_Execute(self, -amount)
+        response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_execute\", \"clock\": " + str(self.clock) + " },"
 
-            for i in range(len(self.stubList)) :
-                if (i+1) != self.id :
-                    response = self.stubList[i].Propagate_Withdraw(bankworld_pb2.WithdrawRequest(msg=str(amount)))
+        for i in range(len(self.stubList)) :
+            if (i+1) != self.id :
+                response = self.stubList[i].Propagate_Withdraw(bankworld_pb2.WithdrawRequest(msg=str(amount)))
 
-            return (response.withdraw_msg)
-        else:
-            return "fail"
+        Branch.Event_Response(self, response.withdraw_msg)
+        response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_response\", \"clock\": " + str(self.clock) + " },"
+        return (response_to_client)
 
+    def Event_Request(self, remote_clk):
+        self.clock = max(remote_clk, self.clock) + 1
+        
+    def Event_Execute(self, amount):
+        self.balance = self.balance + amount
+        self.clock += 1
+
+    def Event_Response(self,response):
+        self.clock += 1
+        
     # parse the message received from customer and call appropriate branch routines
     def MsgDelivery(self, request, context):
-        branchmsg = "{\"id\": " + str(self.id) + ", \"recv\": [{\"interface\": "
+        [request.msg, remote_clk] = request.msg.split(']')
+        request.msg += "]"
+        branchmsg = " {\n  \"pid\": " + str(self.id) + ",\n \"data\":  ["
         self.recvMsg.append(request.msg)
         request.msg = request.msg.replace("\'", "\"")
 
         reqmsg = json.loads(request.msg)
         for i in reqmsg:
             if i['interface'] == 'deposit':
-                branchmsg = branchmsg + "\"deposit\", \"result\": "
-                result = Branch.Deposit(self,i['money'])
-                branchmsg = branchmsg + "\"" + result + "\"}, {\"interface\": "
+                result = Branch.Deposit(self,i['money'],int(remote_clk),str(i['id']))
+                branchmsg += result
             elif i['interface'] == 'withdraw':
-                branchmsg = branchmsg + "\"withdraw\", \"result\": "
-                result = Branch.Withdraw(self,i['money'])
-                branchmsg = branchmsg + "\"" + result + "\"}, {\"interface\": "
+                result = Branch.Withdraw(self,i['money'],int(remote_clk),str(i['id']))
+                branchmsg += result
             elif i['interface'] == 'query':
-#                time.sleep(3)
                 bal = Branch.Query(self)
-                branchmsg = branchmsg + "\"query\", \"result\": \"success\", \"money\": " + str(bal) +"}]}," 
+        branchmsg = branchmsg[:-1] + "\n  ]\n },"
         return bankworld_pb2.BranchReply(branch_msg=branchmsg)
 
 
@@ -136,7 +158,7 @@ def Serve(id, balance, branches):
 # Call Serve() for each branch
 def run():
     for y in data:
-        if y['type'] == 'bank':
+        if y['type'] == 'branch':
             proc = Process(target=Serve, args=(y['id'], y['balance'], count,))
             proc.start()
             p.append(proc)
@@ -154,7 +176,7 @@ if __name__ == '__main__':
 
 # get number of banks N from input.json    
     for x in data:
-        if x['type'] == 'bank':
+        if x['type'] == 'branch':
             count += 1
 
 # call run() to create branches

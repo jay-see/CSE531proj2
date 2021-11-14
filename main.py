@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     # print starting messages to output.json
     for z in data:
-        if z['type'] == 'client':
+        if z['type'] == 'customer':
             with open("output.json", "a") as myfile1:
                 myfile1.write("Starting server. Listening on port " + str(50050+z['id'])+"\n")
     with open("output.json", "a") as myfile1:
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     
     # send appropriate events to all customers
     for i in data:
-        if i['type'] == 'client':
+        if i['type'] == 'customer':
             proc = Process(target=Cust, args=(i['id'], str(i['events']),))
             proc.start()
             p.append(proc)
@@ -54,7 +54,7 @@ if __name__ == '__main__':
         # add closing bracket
         thefile.write("]")
 
-    # convert output to valid JSON format    
+    # convert output to valid JSON format by removing last comma    
     reading_file = open("output.json", "r")
     new_file_content = ""
     for line in reading_file:

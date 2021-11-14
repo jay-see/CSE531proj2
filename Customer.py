@@ -13,6 +13,8 @@ class Customer:
         self.recvMsg = list()
         # pointer for the stub
         self.stub = None
+        # the Customer's clock
+        self.clock = 0
 
     # TODO: students are expected to create the Customer stub
     def createStub(self):
@@ -24,6 +26,8 @@ class Customer:
 
     # TODO: students are expected to send out the events to the Bank
     def executeEvents(self):
+        self.clock += 1
+        self.events += str(self.clock)
         print ("Executing events.." + self.events)
         response = self.stub.MsgDelivery(bankworld_pb2.BranchRequest(msg=self.events))
 
