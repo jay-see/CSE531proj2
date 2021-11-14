@@ -14,7 +14,7 @@ class Customer:
         # pointer for the stub
         self.stub = None
         # the Customer's clock
-        self.clock = 0
+        self.clock = 1
 
     # TODO: students are expected to create the Customer stub
     def createStub(self):

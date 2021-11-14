@@ -1,12 +1,32 @@
 Starting server. Listening on port 50051
 Starting server. Listening on port 50052
 Starting server. Listening on port 50053
-Starting server. Listening on port 50054
-Starting server. Listening on port 50055
 [
-{"id": 4, "recv": [{"interface": "deposit", "result": "success"}, {"interface": "query", "result": "success", "money": 706}]},
-{"id": 1, "recv": [{"interface": "deposit", "result": "success"}, {"interface": "query", "result": "success", "money": 706}]},
-{"id": 3, "recv": [{"interface": "deposit", "result": "success"}, {"interface": "query", "result": "success", "money": 706}]},
-{"id": 5, "recv": [{"interface": "deposit", "result": "success"}, {"interface": "query", "result": "success", "money": 706}]},
-{"id": 2, "recv": [{"interface": "deposit", "result": "success"}, {"interface": "query", "result": "success", "money": 706}]}
+ {
+  "pid": 1,
+ "data":  
+  ]
+ },
+ {
+  "pid": 3,
+ "data":  [
+  {"id": 4, "name": "withdraw_request", "clock": 3 },
+  {"id": 4, "name": "withdraw_execute", "clock": 4 },
+  {"id": 4, "name": "withdraw_propagate_request", "clock": 5 },
+  {"id": 4, "name": "withdraw_propagate_execute", "clock": 6 },
+  {"id": 4, "name": "withdraw_propagate_response", "clock": 7 },
+  {"id": 4, "name": "withdraw_propagate_request", "clock": 5 },
+  {"id": 4, "name": "withdraw_propagate_execute", "clock": 6 },
+  {"id": 4, "name": "withdraw_propagate_response", "clock": 8 },
+  {"id": 4, "name": "withdraw_response", "clock": 9 }
+  ]
+ },
+ {
+  "pid": 2,
+ "data":  [
+  {"id": 2, "name": "deposit_request", "clock": 3 },
+  {"id": 2, "name": "deposit_execute", "clock": 4 },
+  {"id": 2, "name": "deposit_response", "clock": 7 }
+  ]
+ }
 ]

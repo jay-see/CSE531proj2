@@ -49,13 +49,21 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
         return bankworld_pb2.DepositReply(deposit_msg=depositmsg)
 
     # subtract the withdrawal amount from this branch's balance
-    def Propagate_Withdraw(self, amount, context):
+    def Propagate_Withdraw(self, prop_msg, context):
+#        print ("DEBUGGGGGGGGGG = " + prop_msg.msg)
+        msgs = prop_msg.msg.split(',')
+        amount_str = msgs[0]
+        remote_clk_str = msgs[1]
+        event_id = msgs[2]
+        amount = int(amount_str)
+        remote_clk = int(remote_clk_str)
         Branch.Propagate_Request(self, remote_clk)
-        response_to_branch = "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_request\", \"clock\": " + str(self.clock) + " },"
+        response_to_branch = "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_request\", \"clock\": " + str(self.clock) + " },"
         Branch.Propagate_Execute(self, -amount)
-        response_to_branch += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_execute\", \"clock\": " + str(self.clock) + " },"
-        Branch.Propagate_Response(self, response.withdraw_msg)
-        response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_response\", \"clock\": " + str(self.clock) + " },"
+        response_to_branch += "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_execute\", \"clock\": " + str(self.clock) + " },"
+#        Branch.Propagate_Response(self)
+#        response_to_branch += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_response\", \"clock\": " + str(self.clock) + " },"
+        response_to_branch += ";" + str(self.clock)
         return bankworld_pb2.WithdrawReply(withdraw_msg=response_to_branch)
 
     def Propagate_Request(self, remote_clk):
@@ -63,9 +71,6 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
         
     def Propagate_Execute(self, amount):
         self.balance = self.balance + amount
-        self.clock += 1
-
-    def Propagate_Response(self,response):
         self.clock += 1
  
 
@@ -84,7 +89,7 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
             if (i+1) != self.id :
                 response = self.stubList[i].Propagate_Deposit(bankworld_pb2.DepositRequest(msg=str(amount)))
 
-        Branch.Event_Response(self, response.deposit_msg)
+        Branch.Event_Response(self)
         response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"deposit_response\", \"clock\": " + str(self.clock) + " },"
         return (response_to_client)
 
@@ -95,12 +100,16 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
         Branch.Event_Execute(self, -amount)
         response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_execute\", \"clock\": " + str(self.clock) + " },"
 
+        prop_msg = str(amount) + "," + str(self.clock) + "," + event_id
         for i in range(len(self.stubList)) :
             if (i+1) != self.id :
-                response = self.stubList[i].Propagate_Withdraw(bankworld_pb2.WithdrawRequest(msg=str(amount)))
-
-        Branch.Event_Response(self, response.withdraw_msg)
-        response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_response\", \"clock\": " + str(self.clock) + " },"
+                response = self.stubList[i].Propagate_Withdraw(bankworld_pb2.WithdrawRequest(msg=prop_msg))
+                [msg, remote_branch_clk] = response.withdraw_msg.split(';')
+                Branch.Propagate_Response(self, int(remote_branch_clk))
+                response_to_client += msg + "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_response\", \"clock\": " + str(self.clock) + " },"
+        
+        Branch.Event_Response(self)
+        response_to_client += "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_response\", \"clock\": " + str(self.clock) + " },"
         return (response_to_client)
 
     def Event_Request(self, remote_clk):
@@ -110,7 +119,10 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
         self.balance = self.balance + amount
         self.clock += 1
 
-    def Event_Response(self,response):
+    def Propagate_Response(self, remote_branch_clk):
+        self.clock = max(self.clock, remote_branch_clk) + 1
+        
+    def Event_Response(self):
         self.clock += 1
         
     # parse the message received from customer and call appropriate branch routines
