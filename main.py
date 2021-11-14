@@ -7,7 +7,7 @@ import json
 from Customer import Customer
 from multiprocessing import Process
 import time
-import threading
+import os
 
 finalmsg = ""
     
@@ -22,7 +22,7 @@ def Cust(custid, custevents):
     # print to string
     print ("PRE-FINAL MESSAGE is " + finalmsg)
 #    time.sleep(6)
-    with open("output.json", "a") as thefile:
+    with open("out.json", "a") as thefile:
         thefile.write("\n" + finalmsg)
  
 # Opening JSON file
@@ -35,13 +35,13 @@ p = list()
 if __name__ == '__main__':
     logging.basicConfig()
 
-    # print starting messages to output.json
-    for z in data:
-        if z['type'] == 'customer':
-            with open("output.json", "a") as myfile1:
-                myfile1.write("Starting server. Listening on port " + str(50050+z['id'])+"\n")
-    with open("output.json", "a") as myfile1:
-        myfile1.write("[")            
+    # print starting messages to out.json
+#    for z in data:
+#        if z['type'] == 'customer':
+#            with open("out.json", "a") as myfile1:
+#                myfile1.write("Starting server. Listening on port " + str(50050+z['id'])+"\n")
+#    with open("out.json", "a") as myfile1:
+#        myfile1.write("[")            
     
     # send appropriate events to all customers
     for i in data:
@@ -51,10 +51,23 @@ if __name__ == '__main__':
             p.append(proc)
     for proc in p:
         proc.join()    
-    with open("output.json", "a") as thefile:
+    with open("out.json", "a") as thefile:
         # add closing bracket
         thefile.write("]")
 
+    # merge process.json into out.json in new file output.json
+    with open("output.json", 'w') as outfile:
+        outfile.write("[")
+        with open("process.json", "r") as infile:
+            for line in infile:
+                outfile.write(line)
+        with open("out.json", "r") as infile2:
+            for line in infile2:
+                outfile.write(line)
+    # delete original files
+    os.remove("process.json")
+    os.remove("out.json")
+        
     # convert output to valid JSON format by removing last comma    
     reading_file = open("output.json", "r")
     new_file_content = ""
