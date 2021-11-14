@@ -19,9 +19,7 @@ def Cust(custid, custevents):
     out = cust.createStub()
 
     finalmsg = cust.executeEvents()
-    # print to string
-    print ("PRE-FINAL MESSAGE is " + finalmsg)
-#    time.sleep(6)
+    # write to temp file
     with open("out.json", "a") as thefile:
         thefile.write("\n" + finalmsg)
  
@@ -64,7 +62,7 @@ if __name__ == '__main__':
         with open("out.json", "r") as infile2:
             for line in infile2:
                 outfile.write(line)
-    # delete original files
+    # delete temporary files
     os.remove("process.json")
     os.remove("out.json")
         

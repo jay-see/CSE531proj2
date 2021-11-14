@@ -28,7 +28,7 @@ class Customer:
     def executeEvents(self):
         self.clock += 1
         self.events += str(self.clock)
-        print ("Executing events.." + self.events)
+
         response = self.stub.MsgDelivery(bankworld_pb2.BranchRequest(msg=self.events))
 
         return (response.branch_msg)

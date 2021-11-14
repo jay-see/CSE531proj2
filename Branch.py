@@ -186,9 +186,6 @@ def Serve(id, balance, branches):
     
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10,))
     bankbranch = Branch(id, balance, branches)
-    print ("IIIIIIIIIDDDDDDDDDDDDDDDDDD = " + str(id))
-    print ("SERVERLIST = " + str(server))
-    print ("BANKBRANCH = " + str(bankbranch))
     bankworld_pb2_grpc.add_BranchServicer_to_server(bankbranch, server)
 
     server.add_insecure_port('[::]:'+str(channelnumber))
