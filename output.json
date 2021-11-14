@@ -4,7 +4,43 @@ Starting server. Listening on port 50053
 [
  {
   "pid": 1,
+  "data":[
+
+  {"id": 4, "name": "withdraw_propagate_request", "clock": 5 },
+  {"id": 4, "name": "withdraw_propagate_execute", "clock": 6 },
+ {
+  "pid": 2,
+  "data":[
+
+  {"id": 2, "name": "deposit_request", "clock": 3 },
+  {"id": 2, "name": "deposit_execute", "clock": 4 },
+  {"id": 2, "name": "deposit_response", "clock": 5 },
+  {"id": 4, "name": "withdraw_propagate_request", "clock": 6 },
+  {"id": 4, "name": "withdraw_propagate_execute", "clock": 7 },
+ {
+  "pid": 3,
+  "data":[
+
+  {"id": 4, "name": "withdraw_request", "clock": 3 },
+  {"id": 4, "name": "withdraw_execute", "clock": 4 },
+  {"id": 4, "name": "withdraw_propagate_request", "clock": 5 },
+  {"id": 4, "name": "withdraw_propagate_execute", "clock": 6 },
+  {"id": 4, "name": "withdraw_propagate_response", "clock": 7 },
+  {"id": 4, "name": "withdraw_propagate_request", "clock": 6 },
+  {"id": 4, "name": "withdraw_propagate_execute", "clock": 7 },
+  {"id": 4, "name": "withdraw_propagate_response", "clock": 8 },
+  {"id": 4, "name": "withdraw_response", "clock": 9 },
+ {
+  "pid": 1,
  "data":  
+  ]
+ },
+ {
+  "pid": 2,
+ "data":  [
+  {"id": 2, "name": "deposit_request", "clock": 3 },
+  {"id": 2, "name": "deposit_execute", "clock": 4 },
+  {"id": 2, "name": "deposit_response", "clock": 5 }
   ]
  },
  {
@@ -15,18 +51,10 @@ Starting server. Listening on port 50053
   {"id": 4, "name": "withdraw_propagate_request", "clock": 5 },
   {"id": 4, "name": "withdraw_propagate_execute", "clock": 6 },
   {"id": 4, "name": "withdraw_propagate_response", "clock": 7 },
-  {"id": 4, "name": "withdraw_propagate_request", "clock": 5 },
-  {"id": 4, "name": "withdraw_propagate_execute", "clock": 6 },
+  {"id": 4, "name": "withdraw_propagate_request", "clock": 6 },
+  {"id": 4, "name": "withdraw_propagate_execute", "clock": 7 },
   {"id": 4, "name": "withdraw_propagate_response", "clock": 8 },
   {"id": 4, "name": "withdraw_response", "clock": 9 }
-  ]
- },
- {
-  "pid": 2,
- "data":  [
-  {"id": 2, "name": "deposit_request", "clock": 3 },
-  {"id": 2, "name": "deposit_execute", "clock": 4 },
-  {"id": 2, "name": "deposit_response", "clock": 7 }
   ]
  }
 ]
