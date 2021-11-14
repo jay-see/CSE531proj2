@@ -23,7 +23,7 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
         # the Branch's clock
         self.clock = 0
         # logical clock log to be printed to output file
-        self.log = "\n {\n  \"pid\": " + str(id) + ",\n  \"data\":[\n"
+        self.log = "\n {\n  \"pid\": " + str(id) + ",\n  \"data\":["
         # iterate the processID of the branches
 
     # TODO: students are expected to process requests from both Client and Branch
@@ -40,15 +40,22 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
         return ("Done creating BRANCH stubsss!!")
 
     # add the deposit amount to this branch's balance
-    def Propagate_Deposit(self, amount, context):
-        new_bal = self.balance + int(amount.msg)
-
-        if new_bal >= 0:
-            self.balance = new_bal
-            depositmsg = "success"
-        else :
-            depositmsg = "fail"
-        return bankworld_pb2.DepositReply(deposit_msg=depositmsg)
+    def Propagate_Deposit(self, prop_msg, context):
+        msgs = prop_msg.msg.split(',')
+        amount_str = msgs[0]
+        remote_clk_str = msgs[1]
+        event_id = msgs[2]
+        amount = int(amount_str)
+        remote_clk = int(remote_clk_str)
+        Branch.Propagate_Request(self, remote_clk)
+        self.log += "\n   {\"id\": " + event_id + ", \"name\": \"deposit_propagate_request\", \"clock\": " + str(self.clock) + " },"
+        response_to_branch = "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"deposit_propagate_request\"},"
+        Branch.Propagate_Execute(self, amount)
+        self.log += "\n   {\"id\": " + event_id + ", \"name\": \"deposit_propagate_execute\", \"clock\": " + str(self.clock) + " },"
+        response_to_branch += "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"deposit_propagate_execute\"},"
+        # piggy-back the local clock
+        response_to_branch += ";" + str(self.clock)
+        return bankworld_pb2.DepositReply(deposit_msg=response_to_branch)
 
     # subtract the withdrawal amount from this branch's balance
     def Propagate_Withdraw(self, prop_msg, context):
@@ -59,11 +66,11 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
         amount = int(amount_str)
         remote_clk = int(remote_clk_str)
         Branch.Propagate_Request(self, remote_clk)
-        self.log += "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_request\", \"clock\": " + str(self.clock) + " },"
-        response_to_branch = "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_request\", \"clock\": " + str(self.clock) + " },"
+        self.log += "\n   {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_request\", \"clock\": " + str(self.clock) + " },"
+        response_to_branch = "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"withdraw_propagate_request\"},"
         Branch.Propagate_Execute(self, -amount)
-        self.log += "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_execute\", \"clock\": " + str(self.clock) + " },"
-        response_to_branch += "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_execute\", \"clock\": " + str(self.clock) + " },"
+        self.log += "\n   {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_execute\", \"clock\": " + str(self.clock) + " },"
+        response_to_branch += "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"withdraw_propagate_execute\"},"
         # piggy-back the local clock
         response_to_branch += ";" + str(self.clock)
         return bankworld_pb2.WithdrawReply(withdraw_msg=response_to_branch)
@@ -84,41 +91,47 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
     # add deposit amount to this branch balance and then use branch stubs to send the transaction to all other branches
     def Deposit(self, amount, remote_clk, event_id):
         Branch.Event_Request(self, remote_clk)
-        self.log += "\n  {\"id\": " + event_id  + ", \"name\": \"deposit_request\", \"clock\": " + str(self.clock) + " },"
-        response_to_client = "\n  {\"id\": " + event_id  + ", \"name\": \"deposit_request\", \"clock\": " + str(self.clock) + " },"
+        self.log += "\n   {\"id\": " + event_id  + ", \"name\": \"deposit_request\", \"clock\": " + str(self.clock) + " },"
+        response_to_client = "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"deposit_request\"},"
         Branch.Event_Execute(self, amount)
-        self.log += "\n  {\"id\": " + event_id  + ", \"name\": \"deposit_execute\", \"clock\": " + str(self.clock) + " },"
-        response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"deposit_execute\", \"clock\": " + str(self.clock) + " },"
+        self.log += "\n   {\"id\": " + event_id  + ", \"name\": \"deposit_execute\", \"clock\": " + str(self.clock) + " },"
+        response_to_client += "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"deposit_execute\"},"
+        # pass along the local clock and event ID
+        prop_msg = str(amount) + "," + str(self.clock) + "," + event_id
         for i in range(len(self.stubList)) :
             if (i+1) != self.id :
-                response = self.stubList[i].Propagate_Deposit(bankworld_pb2.DepositRequest(msg=str(amount)))
+                response = self.stubList[i].Propagate_Deposit(bankworld_pb2.DepositRequest(msg=prop_msg))
+                [msg, remote_branch_clk] = response.deposit_msg.split(';')
+                Branch.Propagate_Response(self, int(remote_branch_clk))
+                self.log += "\n   {\"id\": " + event_id + ", \"name\": \"deposit_propagate_response\", \"clock\": " + str(self.clock) + " },"
+                response_to_client += msg + "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"deposit_propagate_response\"},"
 
         Branch.Event_Response(self)
-        self.log += "\n  {\"id\": " + event_id  + ", \"name\": \"deposit_response\", \"clock\": " + str(self.clock) + " },"
-        response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"deposit_response\", \"clock\": " + str(self.clock) + " },"
+        self.log += "\n   {\"id\": " + event_id  + ", \"name\": \"deposit_response\", \"clock\": " + str(self.clock) + " },"
+        response_to_client += "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"deposit_response\"},"
         return (response_to_client)
 
     # subtract withdrawal amount from this branch balance and then use branch stubs to send the transaction to all other branches
     def Withdraw(self, amount, remote_clk, event_id):
         Branch.Event_Request(self, remote_clk)
-        self.log += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_request\", \"clock\": " + str(self.clock) + " },"
-        response_to_client = "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_request\", \"clock\": " + str(self.clock) + " },"
+        self.log += "\n   {\"id\": " + event_id  + ", \"name\": \"withdraw_request\", \"clock\": " + str(self.clock) + " },"
+        response_to_client = "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"withdraw_request\"},"
         Branch.Event_Execute(self, -amount)
-        self.log += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_execute\", \"clock\": " + str(self.clock) + " },"
-        response_to_client += "\n  {\"id\": " + event_id  + ", \"name\": \"withdraw_execute\", \"clock\": " + str(self.clock) + " },"
-
+        self.log += "\n   {\"id\": " + event_id  + ", \"name\": \"withdraw_execute\", \"clock\": " + str(self.clock) + " },"
+        response_to_client += "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"withdraw_execute\"},"
+        # pass along the local clock and event ID
         prop_msg = str(amount) + "," + str(self.clock) + "," + event_id
         for i in range(len(self.stubList)) :
             if (i+1) != self.id :
                 response = self.stubList[i].Propagate_Withdraw(bankworld_pb2.WithdrawRequest(msg=prop_msg))
                 [msg, remote_branch_clk] = response.withdraw_msg.split(';')
                 Branch.Propagate_Response(self, int(remote_branch_clk))
-                self.log += msg + "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_response\", \"clock\": " + str(self.clock) + " },"
-                response_to_client += msg + "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_response\", \"clock\": " + str(self.clock) + " },"
+                self.log += "\n   {\"id\": " + event_id + ", \"name\": \"withdraw_propagate_response\", \"clock\": " + str(self.clock) + " },"
+                response_to_client += msg + "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"withdraw_propagate_response\"},"
         
         Branch.Event_Response(self)
-        self.log += "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_response\", \"clock\": " + str(self.clock) + " },"
-        response_to_client += "\n  {\"id\": " + event_id + ", \"name\": \"withdraw_response\", \"clock\": " + str(self.clock) + " },"
+        self.log += "\n   {\"id\": " + event_id + ", \"name\": \"withdraw_response\", \"clock\": " + str(self.clock) + " },"
+        response_to_client += "\n  {\"clock\": " + str(self.clock) + ", \"name\": \"withdraw_response\"},"
 
         return (response_to_client)
 
@@ -139,24 +152,26 @@ class Branch(bankworld_pb2_grpc.BranchServicer):
     def MsgDelivery(self, request, context):
         [request.msg, remote_clk] = request.msg.split(']')
         request.msg += "]"
-        branchmsg = " {\n  \"pid\": " + str(self.id) + ",\n \"data\":  ["
+        branchmsg = " "
         self.recvMsg.append(request.msg)
         request.msg = request.msg.replace("\'", "\"")
 
         reqmsg = json.loads(request.msg)
-        for i in reqmsg:
+        for i in reqmsg: 
             if i['interface'] == 'deposit':
+                branchmsg = " {\n  \"event_id\": " + str(i['id']) + ",\n  \"data\": [ "
                 result = Branch.Deposit(self,i['money'],int(remote_clk),str(i['id']))
                 branchmsg += result
             elif i['interface'] == 'withdraw':
+                branchmsg = " {\n  \"event_id\": " + str(i['id']) + ",\n  \"data\": [ "
                 result = Branch.Withdraw(self,i['money'],int(remote_clk),str(i['id']))
                 branchmsg += result
             elif i['interface'] == 'query':
                 bal = Branch.Query(self)
         branchmsg = branchmsg[:-1] + "\n  ]\n },"
         #print process log to file
-        with open("output.json", "a") as outfile:
-                outfile.write(self.log)
+        with open("process.json", "a") as processfile:
+                processfile.write(self.log)
         return bankworld_pb2.BranchReply(branch_msg=branchmsg)
 
 

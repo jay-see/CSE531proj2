@@ -21,7 +21,7 @@ def Cust(custid, custevents):
     finalmsg = cust.executeEvents()
     # print to string
     print ("PRE-FINAL MESSAGE is " + finalmsg)
-    time.sleep(3)
+#    time.sleep(6)
     with open("output.json", "a") as thefile:
         thefile.write("\n" + finalmsg)
  
